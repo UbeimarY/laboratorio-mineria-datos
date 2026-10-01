@@ -4,7 +4,7 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
-import { Route, Switch, Router as WouterRouter } from 'wouter';
+import { Link, Route, Switch, Router as WouterRouter } from 'wouter';
 import { getGetLabAnalysisQueryKey, useGetLabAnalysis, usePredictLabValue, type LabModelAnalysis } from '@workspace/api-client-react';
 import { CSVLink } from 'react-csv';
 import {
@@ -12,11 +12,13 @@ import {
 } from 'recharts';
 import {
   ArrowDownRight, ArrowUpRight, Download, Moon, Printer, RefreshCw, Sun,
-  Activity, AlertCircle, ArrowRight, ChevronRight, FlaskConical, LineChart,
+  Activity, AlertCircle, ArrowRight, ChevronRight, FileText, FlaskConical, LineChart,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import Informe from '@/pages/informe';
+import { TrainingTools } from '@/components/training-tools';
 
 type CaseId = 'dolar' | 'glucosa' | 'energia';
 type FeatureSpec = { key: string; label: string; unit?: string; min: number; max: number; step: number; initial: number; help?: string };
@@ -79,7 +81,7 @@ function ScatterPanel({ model, visualization, isDark, color }: {
           <p className="text-[13px] font-semibold">{visualization.label}</p>
           <p className="mt-1 text-[11px] text-muted-foreground">Predictor frente a {model.target}</p>
         </div>
-        {points.length > 0 && <CSVLink data={exportData} filename={`${safeFilename(model.name)}-${safeFilename(visualization.label)}.csv`} className="icon-control print:hidden" aria-label={`Descargar CSV de ${visualization.label}`} title="Descargar datos CSV"><Download size={14} /></CSVLink>}
+        {points.length > 0 && <CSVLink data={exportData} filename={`${safeFilename(model.name)}-${safeFilename(visualization.label)}.csv`} className="icon-control print:hidden" data-testid={`link-export-${model.id}-${visualization.feature}`} aria-label={`Descargar CSV de ${visualization.label}`} title="Descargar datos CSV"><Download size={14} /></CSVLink>}
       </div>
       {points.length ? (
         <div className="mt-3 h-[220px] min-w-0">
@@ -132,7 +134,7 @@ function PredictionForm({ model, spec, onPredict, pending, result, error }: {
                 {field.label}<kbd className="mono text-[9px] font-normal text-muted-foreground">0{index + 1}</kbd>
               </span>
               <div className="relative">
-                <input aria-label={field.label} type="number" name={field.key} min={field.min} max={field.max} step={field.step} required value={values[field.key]} onChange={(event) => setValues((current) => ({ ...current, [field.key]: Number(event.target.value) }))} className="h-10 w-full rounded-[2px] border border-input bg-background px-3 pr-16 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
+              <input aria-label={field.label} data-testid={`input-predict-${model.id}-${field.key}`} type="number" name={field.key} min={field.min} max={field.max} step={field.step} required value={values[field.key]} onChange={(event) => setValues((current) => ({ ...current, [field.key]: Number(event.target.value) }))} className="h-10 w-full rounded-[2px] border border-input bg-background px-3 pr-16 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
                 {field.unit && <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{field.unit}</span>}
               </div>
               {field.help && <span className="mt-1 block text-[10px] leading-relaxed text-muted-foreground">{field.help}</span>}
@@ -140,7 +142,7 @@ function PredictionForm({ model, spec, onPredict, pending, result, error }: {
           ))}
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <Button type="submit" disabled={pending} className="h-10 rounded-[2px] bg-[#1d645c] px-4 text-[12px] text-white hover:bg-[#174e48] dark:bg-[#267c75] dark:hover:bg-[#31958a]">
+          <Button type="submit" data-testid={`button-predict-${model.id}`} disabled={pending} className="h-10 rounded-[2px] bg-[#1d645c] px-4 text-[12px] text-white hover:bg-[#174e48] dark:bg-[#267c75] dark:hover:bg-[#31958a]">
             {pending ? <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Activity className="mr-2 h-3.5 w-3.5" />}
             {pending ? 'Calculando…' : 'Calcular estimación'}
             {!pending && <ArrowRight className="ml-2 h-3.5 w-3.5" />}
@@ -149,7 +151,7 @@ function PredictionForm({ model, spec, onPredict, pending, result, error }: {
         </div>
       </form>
       {error && <p role="alert" className="mt-4 flex items-center gap-2 rounded-sm border border-red-500/25 bg-red-500/5 px-3 py-2 text-xs text-red-700 dark:text-red-300"><AlertCircle size={14} />{error}</p>}
-      {result && <div className="mt-4 flex flex-wrap items-end justify-between gap-3 border-t report-rule pt-4 fade-up" aria-live="polite">
+      {result && <div data-testid={`result-prediction-${model.id}`} className="mt-4 flex flex-wrap items-end justify-between gap-3 border-t report-rule pt-4 fade-up" aria-live="polite">
         <div><p className="eyebrow text-[9px] text-muted-foreground">Resultado estimado</p><p className="serif mt-1 text-[32px] leading-none text-[#267c75] dark:text-[#7bc4af]">{num(result.prediction, 3)} <span className="font-sans text-[13px] text-muted-foreground">{result.unit}</span></p></div>
         <p className="max-w-[250px] text-right text-[11px] leading-relaxed text-muted-foreground">Salida del modelo para <strong className="font-semibold text-foreground">{result.target}</strong>, con los valores ingresados.</p>
       </div>}
@@ -166,7 +168,7 @@ function CaseSection({ model, isDark, onPredict, pending, prediction, prediction
   const color = spec.accent;
   const localResult = prediction?.model_id === model.id ? prediction : null;
   return (
-    <Card id={model.id} className="report-card overflow-hidden">
+    <Card id={model.id} data-testid={`card-model-${model.id}`} className="report-card overflow-hidden">
       <CardHeader className="px-5 pb-3 pt-5 sm:px-7 sm:pt-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-3">
@@ -184,15 +186,15 @@ function CaseSection({ model, isDark, onPredict, pending, prediction, prediction
         <div className="grid grid-cols-3 border-y report-rule py-4">
           <div className="pr-3">
             <p className="eyebrow text-[9px] text-muted-foreground">MSE</p>
-            <p className="mono mt-1 text-[15px] font-medium sm:text-[18px]">{num(model.metrics.mse, 3)}</p>
+            <p data-testid={`value-mse-${model.id}`} className="mono mt-1 text-[15px] font-medium sm:text-[18px]">{num(model.metrics.mse, 3)}</p>
           </div>
           <div className="border-l report-rule px-3">
             <p className="eyebrow text-[9px] text-muted-foreground">RMSE</p>
-            <p className="mono mt-1 text-[15px] font-medium sm:text-[18px]">{num(model.metrics.rmse, 3)} <span className="font-sans text-[10px] text-muted-foreground">{model.unit}</span></p>
+            <p data-testid={`value-rmse-${model.id}`} className="mono mt-1 text-[15px] font-medium sm:text-[18px]">{num(model.metrics.rmse, 3)} <span className="font-sans text-[10px] text-muted-foreground">{model.unit}</span></p>
           </div>
           <div className="border-l report-rule pl-3">
             <p className="eyebrow text-[9px] text-muted-foreground">R²</p>
-            <p className="mono mt-1 text-[15px] font-medium sm:text-[18px]">{num(model.metrics.r2, 3)}</p>
+            <p data-testid={`value-r2-${model.id}`} className="mono mt-1 text-[15px] font-medium sm:text-[18px]">{num(model.metrics.r2, 3)}</p>
           </div>
         </div>
         <div className="mt-4 flex items-start gap-3 rounded-sm bg-muted/60 px-3.5 py-3">
@@ -299,14 +301,17 @@ function Home() {
               {lastRefreshed && <p className="mt-3 text-[10px] text-muted-foreground">Actualizado {lastRefreshed}</p>}
             </div>
             <div className="print-hidden flex items-center gap-1.5">
-              <Button variant="outline" size="sm" onClick={() => query.refetch()} disabled={loading} className="h-9 gap-2 rounded-[2px] px-3 text-[11px]">
+              <Button variant="outline" size="sm" data-testid="button-refresh-analysis" onClick={() => query.refetch()} disabled={loading} className="h-9 gap-2 rounded-[2px] px-3 text-[11px]">
                 <RefreshCw size={13} className={isSpinning ? 'animate-spin' : ''} />Actualizar
               </Button>
-              <button type="button" onClick={() => window.print()} className="icon-control h-9 w-9" aria-label="Imprimir o guardar como PDF" title="Imprimir o guardar como PDF"><Printer size={15} /></button>
-              <button type="button" onClick={() => setIsDark((value) => !value)} className="icon-control h-9 w-9" aria-label={isDark ? 'Activar modo claro' : 'Activar modo oscuro'} title={isDark ? 'Modo claro' : 'Modo oscuro'}>{isDark ? <Sun size={15} /> : <Moon size={15} />}</button>
+              <Link href="/informe" data-testid="link-academic-report" className="inline-flex h-9 items-center gap-2 rounded-sm border report-rule px-3 text-[10px] font-semibold text-foreground hover:border-primary/50 hover:text-primary"><FileText size={13} />Informe</Link>
+              <button type="button" data-testid="button-print-dashboard" onClick={() => window.print()} className="icon-control h-9 w-9" aria-label="Imprimir o guardar como PDF" title="Imprimir o guardar como PDF"><Printer size={15} /></button>
+              <button type="button" data-testid="button-toggle-theme" onClick={() => setIsDark((value) => !value)} className="icon-control h-9 w-9" aria-label={isDark ? 'Activar modo claro' : 'Activar modo oscuro'} title={isDark ? 'Modo claro' : 'Modo oscuro'}>{isDark ? <Sun size={15} /> : <Moon size={15} />}</button>
             </div>
           </div>
         </header>
+
+        <TrainingTools />
 
         <section className="mb-6" aria-labelledby="executive-title">
           <Card className="report-card overflow-hidden">
@@ -316,7 +321,7 @@ function Home() {
             <CardContent className="px-5 pb-5 sm:px-7 sm:pb-6">
               {loading ? <div className="space-y-3 py-2"><Skeleton className="h-4 w-[92%]" /><Skeleton className="h-4 w-[83%]" /><Skeleton className="h-4 w-[87%]" /></div> : query.isError ? <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground"><AlertCircle size={15} />No se pudo cargar el análisis. Usa «Actualizar» para reintentar.</div> : models.length === 0 ? <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground"><Activity size={15} />Aún no hay resultados de modelos para mostrar.</div> : (
                 <ul className="space-y-3">
-                  {summaryBullets.map((item, index) => <li key={index} className="flex items-start gap-3 text-[12px] leading-relaxed sm:text-[13px]"><span className="mono mt-[1px] text-[10px] text-[#267c75] dark:text-[#7bc4af]">0{index + 1}</span><span>{item}</span></li>)}
+                  {summaryBullets.map((item, index) => <li key={index} data-testid={`text-executive-finding-${index + 1}`} className="flex items-start gap-3 text-[12px] leading-relaxed sm:text-[13px]"><span className="mono mt-[1px] text-[10px] text-[#267c75] dark:text-[#7bc4af]">0{index + 1}</span><span>{item}</span></li>)}
                 </ul>
               )}
               <div className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 border-t report-rule pt-3 text-[10px] leading-relaxed text-muted-foreground">
@@ -329,7 +334,7 @@ function Home() {
         </section>
 
         <nav className="mb-5 flex flex-wrap gap-2 print-hidden" aria-label="Saltar a un caso">
-          {(['dolar', 'glucosa', 'energia'] as CaseId[]).map((id) => <a key={id} href={`#${id}`} className="group inline-flex items-center gap-2 rounded-sm border report-rule px-3 py-2 text-[11px] transition-colors hover:border-primary/50 hover:text-primary"><span className="mono text-[9px] text-muted-foreground">{CASES[id].ordinal}</span>{CASES[id].title}<ChevronRight size={12} className="text-muted-foreground transition-transform group-hover:translate-x-0.5" /></a>)}
+          {(['dolar', 'glucosa', 'energia'] as CaseId[]).map((id) => <a key={id} data-testid={`link-jump-${id}`} href={`#${id}`} className="group inline-flex items-center gap-2 rounded-sm border report-rule px-3 py-2 text-[11px] transition-colors hover:border-primary/50 hover:text-primary"><span className="mono text-[9px] text-muted-foreground">{CASES[id].ordinal}</span>{CASES[id].title}<ChevronRight size={12} className="text-muted-foreground transition-transform group-hover:translate-x-0.5" /></a>)}
         </nav>
 
         <div className="space-y-6">
@@ -338,7 +343,7 @@ function Home() {
               <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-muted text-muted-foreground"><AlertCircle size={19} /></span>
               <h2 className="serif mt-4 text-xl">El informe no está disponible</h2>
               <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">No pudimos conectar con el servicio de análisis. Conservamos la página lista para volver a intentarlo.</p>
-              <Button variant="outline" onClick={() => query.refetch()} className="mt-5 rounded-[2px]"><RefreshCw size={14} className="mr-2" />Reintentar</Button>
+              <Button variant="outline" data-testid="button-retry-analysis" onClick={() => query.refetch()} className="mt-5 rounded-[2px]"><RefreshCw size={14} className="mr-2" />Reintentar</Button>
             </Card>
           ) : models.length === 0 ? (
             <Card className="report-card p-8 text-center">
@@ -377,6 +382,7 @@ function App() {
           <ErrorBoundary>
             <Switch>
               <Route path="/" component={Home} />
+              <Route path="/informe" component={Informe} />
               <Route component={NotFound} />
             </Switch>
           </ErrorBoundary>

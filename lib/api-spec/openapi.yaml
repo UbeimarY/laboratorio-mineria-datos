@@ -38,6 +38,28 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LabAnalysisResponse"
+  /lab/train:
+    post:
+      operationId: trainLabModels
+      tags: [laboratorio]
+      summary: Reentrena los tres modelos a partir de los CSV incluidos en el laboratorio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabTrainingInput"
+      responses:
+        "200":
+          description: Resultados recalculados de los tres modelos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabAnalysisResponse"
+        "400":
+          description: Fuente de entrenamiento inválida
+        "500":
+          description: No fue posible reentrenar los modelos
   /lab/predict:
     post:
       operationId: predictLabValue
@@ -203,4 +225,12 @@ components:
         unit:
           type: string
       required: [model_id, prediction, target, unit]
+    LabTrainingInput:
+      type: object
+      properties:
+        source:
+          type: string
+          enum: [included_csv]
+          description: Entrenar con los tres archivos CSV incluidos en el laboratorio
+      required: [source]
 

@@ -64,6 +64,56 @@ export const GetLabAnalysisResponse = zod.object({
 
 
 /**
+ * @summary Reentrena los tres modelos a partir de los CSV incluidos en el laboratorio
+ */
+export const TrainLabModelsBody = zod.object({
+  "source": zod.enum(['included_csv']).describe('Entrenar con los tres archivos CSV incluidos en el laboratorio')
+})
+
+export const TrainLabModelsResponse = zod.object({
+  "models": zod.array(zod.object({
+  "id": zod.enum(['dolar', 'glucosa', 'energia']),
+  "name": zod.string(),
+  "target": zod.string(),
+  "unit": zod.string(),
+  "row_count": zod.number().int(),
+  "test_row_count": zod.number().int(),
+  "metrics": zod.object({
+  "mse": zod.number(),
+  "rmse": zod.number(),
+  "r2": zod.number()
+}),
+  "intercept": zod.number(),
+  "feature_impacts": zod.array(zod.object({
+  "feature": zod.string(),
+  "label": zod.string(),
+  "coefficient": zod.number(),
+  "standardized_impact": zod.number(),
+  "importance_pct": zod.number(),
+  "direction": zod.string(),
+  "interpretation": zod.string()
+})),
+  "visualizations": zod.array(zod.object({
+  "feature": zod.string(),
+  "label": zod.string(),
+  "points": zod.array(zod.object({
+  "x": zod.number(),
+  "y": zod.number()
+}))
+})),
+  "data_preview": zod.array(zod.record(zod.string(), zod.number())),
+  "conclusion": zod.string()
+})),
+  "methodology": zod.object({
+  "train_test_split": zod.string(),
+  "random_state": zod.number().int(),
+  "periodic_encoding": zod.string(),
+  "importance_method": zod.string()
+})
+})
+
+
+/**
  * @summary Calcula una predicción con uno de los modelos entrenados
  */
 export const PredictLabValueBody = zod.object({

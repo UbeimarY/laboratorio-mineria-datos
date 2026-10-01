@@ -18,5 +18,7 @@ export * from './labPredictionRequest';
 export * from './labPredictionRequestFeatures';
 export * from './labPredictionRequestModelId';
 export * from './labPredictionResponse';
+export * from './labTrainingInput';
+export * from './labTrainingInputSource';
 export * from './labVisualization';
 export * from './labVisualizationPointsItem';

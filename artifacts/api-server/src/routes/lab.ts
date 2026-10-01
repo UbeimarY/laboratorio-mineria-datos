@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { execFile } from "node:child_process";
 import { resolve } from "node:path";
 import { Router, type IRouter } from "express";
 import type {
@@ -7,6 +8,7 @@ import type {
   LabPredictionRequest,
   LabPredictionResponse,
 } from "@workspace/api-zod";
+import { TrainLabModelsBody } from "@workspace/api-zod";
 
 type LabModelWithCoefficients = LabModelAnalysis & {
   prediction_coefficients: Record<string, number>;
@@ -18,6 +20,21 @@ type LabAnalysisWithCoefficients = Omit<LabAnalysisResponse, "models"> & {
 
 const router: IRouter = Router();
 const analysisPath = resolve(process.cwd(), "data", "lab-analysis.json");
+const trainerPath = resolve(
+  process.cwd(),
+  "../laboratorio-mineria-datos/analysis/train_models.py",
+);
+
+function runTrainer(): Promise<void> {
+  return new Promise((resolvePromise, reject) => {
+    execFile(
+      process.env.PYTHON_BINARY ?? "python3",
+      [trainerPath],
+      { timeout: 30_000, maxBuffer: 2 * 1024 * 1024 },
+      (error) => (error ? reject(error) : resolvePromise()),
+    );
+  });
+}
 
 function readAnalysis(): LabAnalysisWithCoefficients {
   const content = readFileSync(analysisPath, "utf8");
@@ -61,6 +78,29 @@ router.get("/lab/analysis", (_req, res) => {
     res.status(503).json({
       error:
         "No hay resultados del laboratorio. Ejecuta python analysis/train_models.py para entrenar los modelos.",
+    });
+  }
+});
+
+router.post("/lab/train", async (req, res): Promise<void> => {
+  const parsed = TrainLabModelsBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  try {
+    await runTrainer();
+    const analysis = readAnalysis();
+    res.json({
+      ...analysis,
+      models: analysis.models.map(
+        ({ prediction_coefficients: _coefficients, ...model }) => model,
+      ),
+    });
+  } catch (error) {
+    req.log.error({ error }, "Live laboratory model training failed");
+    res.status(500).json({
+      error: "No fue posible reentrenar los modelos con los CSV incluidos.",
     });
   }
 });

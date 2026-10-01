@@ -97,3 +97,18 @@ export interface LabPredictionResponse {
   unit: string;
 }
 
+/**
+ * Entrenar con los tres archivos CSV incluidos en el laboratorio
+ */
+export type LabTrainingInputSource = typeof LabTrainingInputSource[keyof typeof LabTrainingInputSource];
+
+
+export const LabTrainingInputSource = {
+  included_csv: 'included_csv',
+} as const;
+
+export interface LabTrainingInput {
+  /** Entrenar con los tres archivos CSV incluidos en el laboratorio */
+  source: LabTrainingInputSource;
+}
+

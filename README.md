@@ -38,7 +38,19 @@ El espacio de trabajo es un monorepo pnpm con dos artefactos:
 - Regenerar tipos y hooks desde OpenAPI: `pnpm --filter @workspace/api-spec run codegen`
 - Verificar TypeScript: `pnpm --filter @workspace/api-server run typecheck` y `pnpm --filter @workspace/laboratorio-mineria-datos run typecheck`
 
-La web lee `GET /api/lab/analysis` y calcula predicciones con `POST /api/lab/predict`. La API devuelve un error explícito si todavía no existe el archivo de análisis.
+La web lee `GET /api/lab/analysis`, reentrena con `POST /api/lab/train` y calcula predicciones con `POST /api/lab/predict`. El informe académico está disponible en `/informe`; desde allí se puede imprimir o guardar como PDF. En el panel principal también se puede consultar y descargar el archivo fuente Python del entrenador.
+
+## Desplegar en Vercel
+
+Importa este repositorio en Vercel y conserva **la raíz del repositorio** como directorio raíz del proyecto. `vercel.json` configura la instalación pnpm, la compilación de Vite, el directorio estático y las funciones Python; no sobrescribas esos comandos con rutas del subdirectorio del artefacto.
+
+Vercel publica estas funciones en las mismas rutas que usa la aplicación:
+
+- `GET /api/lab/analysis`
+- `POST /api/lab/train`
+- `POST /api/lab/predict`
+
+Las funciones de Vercel leen los CSV incluidos y el análisis empaquetado. El reentrenamiento calcula y devuelve los resultados en memoria; no depende de que los archivos escritos o el estado del proceso sobrevivan entre invocaciones serverless. Las dependencias Python están declaradas en `pyproject.toml`.
 
 ## Resultados de esta ejecución
 

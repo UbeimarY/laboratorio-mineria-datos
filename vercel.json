@@ -1,0 +1,23 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @workspace/laboratorio-mineria-datos run build",
+  "outputDirectory": "artifacts/laboratorio-mineria-datos/dist/public",
+  "rewrites": [
+    {
+      "source": "/informe",
+      "destination": "/index.html"
+    }
+  ],
+  "functions": {
+    "api/lab/analysis.py": {
+      "includeFiles": "{vercel_support/**,artifacts/api-server/data/lab-analysis.json}"
+    },
+    "api/lab/predict.py": {
+      "includeFiles": "{vercel_support/**,artifacts/api-server/data/lab-analysis.json}"
+    },
+    "api/lab/train.py": {
+      "includeFiles": "{vercel_support/**,artifacts/laboratorio-mineria-datos/analysis/train_models.py,artifacts/laboratorio-mineria-datos/data/raw/*.csv}"
+    }
+  }
+}

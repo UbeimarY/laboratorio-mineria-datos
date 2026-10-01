@@ -8,9 +8,6 @@ from pathlib import Path
 from typing import Any
 
 import joblib
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
@@ -147,6 +144,11 @@ def human_interpretation(
 def plot_relationships(
     frame: pd.DataFrame, specification: dict[str, Any], destination: Path
 ) -> None:
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
     features = specification["features"]
     target = specification["target"]
     fig, axes = plt.subplots(1, len(features), figsize=(5 * len(features), 4))
@@ -167,7 +169,9 @@ def plot_relationships(
     plt.close(fig)
 
 
-def fit_one(specification: dict[str, Any]) -> dict[str, Any]:
+def fit_one(
+    specification: dict[str, Any], *, persist_artifacts: bool = True
+) -> dict[str, Any]:
     csv_path = RAW / specification["file"]
     if not csv_path.exists():
         raise FileNotFoundError(
@@ -245,7 +249,10 @@ def fit_one(specification: dict[str, Any]) -> dict[str, Any]:
         )
     impacts.sort(key=lambda item: item["standardized_impact"], reverse=True)
 
-    plot_relationships(frame, specification, FIGURES / f"{specification['id']}.png")
+    if persist_artifacts:
+        plot_relationships(
+            frame, specification, FIGURES / f"{specification['id']}.png"
+        )
     chart_frame = frame
     if len(frame) > CHART_SAMPLE_SIZE:
         chart_frame = frame.sample(CHART_SAMPLE_SIZE, random_state=SEED)
@@ -270,23 +277,24 @@ def fit_one(specification: dict[str, Any]) -> dict[str, Any]:
         "La asociación del modelo describe estos datos y no demuestra causalidad."
     )
     model_id = specification["id"]
-    joblib.dump(
-        {
-            "model": final_model,
-            "model_id": model_id,
-            "target": specification["target"],
-            "unit": specification["unit"],
-            "raw_features": specification["features"],
-            "design_columns": list(design.columns),
-            "design_groups": groups,
-            "periodic_encoding": specification["periodic"],
-            "metrics_holdout": {"mse": mse, "rmse": rmse, "r2": r2},
-            "training_rows": len(frame),
-            "random_state": SEED,
-        },
-        MODELS / f"{model_id}.joblib",
-        compress=3,
-    )
+    if persist_artifacts:
+        joblib.dump(
+            {
+                "model": final_model,
+                "model_id": model_id,
+                "target": specification["target"],
+                "unit": specification["unit"],
+                "raw_features": specification["features"],
+                "design_columns": list(design.columns),
+                "design_groups": groups,
+                "periodic_encoding": specification["periodic"],
+                "metrics_holdout": {"mse": mse, "rmse": rmse, "r2": r2},
+                "training_rows": len(frame),
+                "random_state": SEED,
+            },
+            MODELS / f"{model_id}.joblib",
+            compress=3,
+        )
 
     return {
         "id": model_id,
@@ -381,11 +389,17 @@ def write_report(models: list[dict[str, Any]]) -> None:
     )
 
 
-def main() -> None:
-    MODELS.mkdir(parents=True, exist_ok=True)
-    FIGURES.mkdir(parents=True, exist_ok=True)
-    API_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    results = [fit_one(specification) for specification in SPECIFICATIONS]
+def build_analysis(*, persist_artifacts: bool = False) -> dict[str, Any]:
+    """Train every dataset and optionally write local model/report artifacts."""
+    if persist_artifacts:
+        MODELS.mkdir(parents=True, exist_ok=True)
+        FIGURES.mkdir(parents=True, exist_ok=True)
+        API_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+
+    results = [
+        fit_one(specification, persist_artifacts=persist_artifacts)
+        for specification in SPECIFICATIONS
+    ]
     payload = {
         "models": results,
         "methodology": {
@@ -401,10 +415,18 @@ def main() -> None:
             ),
         },
     }
-    API_OUTPUT.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    write_report(results)
+
+    if persist_artifacts:
+        API_OUTPUT.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        write_report(results)
+    return payload
+
+
+def main() -> None:
+    payload = build_analysis(persist_artifacts=True)
+    results = payload["models"]
     for model in results:
         print(
             f"{model['name']}: n={model['row_count']}, "
