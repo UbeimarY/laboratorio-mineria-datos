@@ -145,6 +145,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/LabVisualization"
+        correlation_matrix:
+          $ref: "#/components/schemas/LabCorrelationMatrix"
         data_preview:
           type: array
           items:
@@ -166,6 +168,27 @@ components:
         - visualizations
         - data_preview
         - conclusion
+    LabCorrelationMatrix:
+      type: object
+      description: Correlación de Pearson de las variables originales sobre todas las filas del CSV, no sobre la muestra gráfica.
+      properties:
+        features:
+          type: array
+          items:
+            type: string
+        labels:
+          type: array
+          items:
+            type: string
+        values:
+          type: array
+          items:
+            type: array
+            items:
+              type: [number, "null"]
+        row_count:
+          type: integer
+      required: [features, labels, values, row_count]
     LabFeatureImpact:
       type: object
       properties:

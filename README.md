@@ -40,6 +40,8 @@ El espacio de trabajo es un monorepo pnpm con dos artefactos:
 
 La web lee `GET /api/lab/analysis`, reentrena con `POST /api/lab/train` y calcula predicciones con `POST /api/lab/predict`. El informe académico está disponible en `/informe`; desde allí se puede imprimir o guardar como PDF. En el panel principal también se puede consultar y descargar el archivo fuente Python del entrenador.
 
+El informe incluye los diagramas CRISP-DM y del flujo de cada modelo, las gráficas de dispersión de los predictores y matrices de correlación de Pearson. Las dispersiones muestran una muestra reproducible de hasta 350 registros (semilla 42); las matrices se calculan sobre todas las filas de cada CSV. En energía, la correlación de los códigos originales de hora y día de semana no sustituye el análisis de su representación cíclica.
+
 ## Desplegar en Vercel
 
 Importa este repositorio en Vercel y conserva **la raíz del repositorio** como directorio raíz del proyecto. `vercel.json` configura la instalación pnpm, la compilación de Vite, el directorio estático y las funciones Python; no sobrescribas esos comandos con rutas del subdirectorio del artefacto.

@@ -2,6 +2,7 @@ import { useGetLabAnalysis, getGetLabAnalysisQueryKey, type LabModelAnalysis } f
 import { Link } from 'wouter';
 import { AlertCircle, ArrowLeft, Printer, RefreshCw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScatterFigure, ImportanceFigure, CorrelationFigure } from '@/components/report/figures';
 
 const number = (value: number, digits = 3) => new Intl.NumberFormat('es-CO', { maximumFractionDigits: digits }).format(value);
 
@@ -15,7 +16,7 @@ function CrispDmDiagram() {
     ['06', 'Despliegue', 'Predicción con modelo final'],
   ];
   return (
-    <figure className="mt-5" data-testid="diagram-crisp-dm">
+    <figure className="report-figure mt-5" data-testid="diagram-crisp-dm">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {steps.map(([numbering, title, detail], index) => <div key={numbering} className="diagram-step relative min-h-[88px] border report-rule px-3 py-3">
           <div className="flex items-center gap-2"><span className="mono text-[9px] text-[#267c75] dark:text-[#7bc4af]">{numbering}</span><span className="text-[11px] font-semibold">{title}</span></div>
@@ -23,7 +24,7 @@ function CrispDmDiagram() {
           {index < steps.length - 1 && <span aria-hidden="true" className="diagram-arrow hidden lg:block">→</span>}
         </div>)}
       </div>
-      <figcaption className="mt-2 text-[9px] leading-relaxed text-muted-foreground">Secuencia metodológica implementada en el entrenador de este laboratorio.</figcaption>
+      <figcaption className="mt-2 text-[9px] leading-relaxed text-muted-foreground"><strong className="font-semibold text-foreground">Figura 1.</strong> Secuencia metodológica implementada en el entrenador de este laboratorio.</figcaption>
     </figure>
   );
 }
@@ -56,7 +57,7 @@ function ModelFlow({ model }: { model: LabModelAnalysis }) {
   );
 }
 
-function ModelResults({ model }: { model: LabModelAnalysis }) {
+function ModelResults({ model, base }: { model: LabModelAnalysis; base: number }) {
   const impacts = [...model.feature_impacts].sort((left, right) => right.importance_pct - left.importance_pct);
   return (
     <section className="academic-section" data-testid={`section-report-model-${model.id}`}>
@@ -66,6 +67,9 @@ function ModelResults({ model }: { model: LabModelAnalysis }) {
       </div>
       <p className="mt-1 text-[11px] text-muted-foreground">Variable respuesta: <strong className="font-semibold text-foreground">{model.target}</strong> ({model.unit}).</p>
       <ModelFlow model={model} />
+      <p className="mt-1 text-[9px] text-muted-foreground"><strong className="font-semibold text-foreground">Figura {base}.</strong> Flujo de {model.name}: predictores, regresión lineal y variable respuesta.</p>
+      <ScatterFigure model={model} number={base + 1} />
+      <CorrelationFigure model={model} number={base + 2} />
       <div className="mt-4 overflow-x-auto">
         <table className="academic-table w-full min-w-[470px] border-collapse text-left text-[10px]" data-testid={`table-report-metrics-${model.id}`}>
           <caption className="sr-only">Métricas de evaluación de {model.name}</caption>
@@ -95,6 +99,7 @@ function ModelResults({ model }: { model: LabModelAnalysis }) {
           </table>
         </div>
       </div>
+      <ImportanceFigure model={model} number={base + 3} />
       <blockquote className="mt-4 border-l-2 border-[#267c75]/50 pl-3 text-[11px] leading-relaxed text-muted-foreground">{model.conclusion}</blockquote>
     </section>
   );
@@ -152,7 +157,7 @@ export default function Informe() {
             ) : models.length === 0 ? (
               <div data-testid="status-report-empty" className="mt-5 border border-dashed report-rule p-5 text-center text-[11px] text-muted-foreground">Aún no hay resultados de entrenamiento publicados para incluir en el informe.</div>
             ) : (
-              <div className="mt-5 space-y-7" data-testid="content-report-results">{models.map((model) => <ModelResults key={model.id} model={model} />)}</div>
+              <div className="mt-5 space-y-7" data-testid="content-report-results">{models.map((model, index) => <ModelResults key={model.id} model={model} base={2 + index * 4} />)}</div>
             )}
           </section>
 

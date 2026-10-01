@@ -347,7 +347,15 @@
 .model-flow { background: hsl(var(--muted) / .2); }
 [data-testid^="status-"] { scroll-margin-top: 1rem; }
 
+.report-figure { background: hsl(var(--muted) / .15); }
+.importance-bar { background: #267c75; }
+.corr-scale { background: linear-gradient(90deg, rgba(200,116,47,.8), transparent 50%, rgba(38,124,117,.8)); }
+.corr-cell { min-width: 3rem; }
 @media print {
+  .report-scatter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .academic-document.report-card { break-inside: auto !important; margin-top: 0; }
+  .report-figure, .report-figure figcaption, .corr-table tr { break-inside: avoid; page-break-inside: avoid; }
+  .report-figure svg, .importance-bar, .corr-cell, .corr-scale { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   @page { margin: 0; }
   html, body { margin: 0; min-height: auto; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   :root, .dark { color-scheme: light; --background: 42 35% 99%; --foreground: 205 28% 17%; --card: 42 35% 99%; --card-foreground: 205 28% 17%; --muted-foreground: 205 12% 45%; }

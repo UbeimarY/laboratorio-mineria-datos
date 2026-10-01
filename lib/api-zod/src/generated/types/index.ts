@@ -9,6 +9,7 @@
 export * from './healthStatus';
 export * from './labAnalysisResponse';
 export * from './labAnalysisResponseMethodology';
+export * from './labCorrelationMatrix';
 export * from './labFeatureImpact';
 export * from './labModelAnalysis';
 export * from './labModelAnalysisDataPreviewItem';

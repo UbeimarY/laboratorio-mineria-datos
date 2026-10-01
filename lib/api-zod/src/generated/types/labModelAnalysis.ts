@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { LabCorrelationMatrix } from './labCorrelationMatrix';
 import type { LabFeatureImpact } from './labFeatureImpact';
 import type { LabModelAnalysisDataPreviewItem } from './labModelAnalysisDataPreviewItem';
 import type { LabModelAnalysisId } from './labModelAnalysisId';
@@ -22,6 +23,7 @@ export interface LabModelAnalysis {
   intercept: number;
   feature_impacts: LabFeatureImpact[];
   visualizations: LabVisualization[];
+  correlation_matrix?: LabCorrelationMatrix;
   data_preview: LabModelAnalysisDataPreviewItem[];
   conclusion: string;
 }

@@ -277,6 +277,20 @@ def fit_one(
         "La asociación del modelo describe estos datos y no demuestra causalidad."
     )
     model_id = specification["id"]
+    correlation_features = specification["features"] + [specification["target"]]
+    correlations = frame[correlation_features].corr(method="pearson")
+    correlation_matrix = {
+        "features": correlation_features,
+        "labels": [
+            specification["labels"].get(feature, feature)
+            for feature in correlation_features
+        ],
+        "values": [
+            [float(value) if math.isfinite(value) else None for value in row]
+            for row in correlations.to_numpy()
+        ],
+        "row_count": int(len(frame)),
+    }
     if persist_artifacts:
         joblib.dump(
             {
@@ -308,6 +322,7 @@ def fit_one(
         "prediction_coefficients": coefficients,
         "feature_impacts": impacts,
         "visualizations": visualizations,
+        "correlation_matrix": correlation_matrix,
         "data_preview": frame[
             specification["features"] + [specification["target"]]
         ]

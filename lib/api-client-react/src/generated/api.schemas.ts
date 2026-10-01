@@ -46,6 +46,16 @@ export interface LabVisualization {
   points: LabVisualizationPointsItem[];
 }
 
+/**
+ * Correlación de Pearson de las variables originales sobre todas las filas del CSV, no sobre la muestra gráfica.
+ */
+export interface LabCorrelationMatrix {
+  features: string[];
+  labels: string[];
+  values: ((number | null)[])[];
+  row_count: number;
+}
+
 export type LabModelAnalysisMetrics = {
   mse: number;
   rmse: number;
@@ -65,6 +75,7 @@ export interface LabModelAnalysis {
   intercept: number;
   feature_impacts: LabFeatureImpact[];
   visualizations: LabVisualization[];
+  correlation_matrix?: LabCorrelationMatrix;
   data_preview: LabModelAnalysisDataPreviewItem[];
   conclusion: string;
 }

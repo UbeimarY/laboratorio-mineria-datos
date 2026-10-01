@@ -51,6 +51,12 @@ export const GetLabAnalysisResponse = zod.object({
   "y": zod.number()
 }))
 })),
+  "correlation_matrix": zod.object({
+  "features": zod.array(zod.string()),
+  "labels": zod.array(zod.string()),
+  "values": zod.array(zod.array(zod.number().nullable())),
+  "row_count": zod.number().int()
+}).optional().describe('Correlación de Pearson de las variables originales sobre todas las filas del CSV, no sobre la muestra gráfica.'),
   "data_preview": zod.array(zod.record(zod.string(), zod.number())),
   "conclusion": zod.string()
 })),
@@ -101,6 +107,12 @@ export const TrainLabModelsResponse = zod.object({
   "y": zod.number()
 }))
 })),
+  "correlation_matrix": zod.object({
+  "features": zod.array(zod.string()),
+  "labels": zod.array(zod.string()),
+  "values": zod.array(zod.array(zod.number().nullable())),
+  "row_count": zod.number().int()
+}).optional().describe('Correlación de Pearson de las variables originales sobre todas las filas del CSV, no sobre la muestra gráfica.'),
   "data_preview": zod.array(zod.record(zod.string(), zod.number())),
   "conclusion": zod.string()
 })),
