@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,11 @@ API_OUTPUT = ROOT.parents[1] / "artifacts" / "api-server" / "data" / "lab-analys
 SEED = 42
 TEST_SIZE = 0.20
 CHART_SAMPLE_SIZE = 350
+PROCESSED = ROOT / "data" / "processed"
+
+# Permite tanto ejecutar el script como cargarlo por ruta en la API serverless.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_cleaning import POLICY, clean_dataset, diagnose_outliers
 
 SPECIFICATIONS: list[dict[str, Any]] = [
     {
@@ -178,18 +184,21 @@ def fit_one(
             f"No se encontró el dataset requerido: {csv_path}. "
             "Guárdalo en data/raw/ con el nombre documentado."
         )
-    frame = pd.read_csv(csv_path)
+    raw = pd.read_csv(csv_path, dtype=object)
+    frame, data_quality = clean_dataset(raw, specification)
     validate_dataset(frame, specification)
-    frame = frame.copy()
-    frame[specification["features"] + [specification["target"]]] = frame[
-        specification["features"] + [specification["target"]]
-    ].apply(pd.to_numeric)
 
     design, groups = prepare_design_matrix(frame, specification)
     target = frame[specification["target"]].astype(float)
     x_train, x_test, y_train, y_test = train_test_split(
         design, target, test_size=TEST_SIZE, random_state=SEED
     )
+    if y_train.nunique() < 2 or y_test.nunique() < 2:
+        raise ValueError(
+            f"{specification['file']}: la partición no tiene suficiente variación "
+            "del objetivo para evaluar; revisa el dataset."
+        )
+    diagnose_outliers(frame, x_train.index, x_test.index, specification, data_quality)
     evaluation_model = LinearRegression().fit(x_train, y_train)
     predictions = evaluation_model.predict(x_test)
     mse = float(mean_squared_error(y_test, predictions))
@@ -304,6 +313,7 @@ def fit_one(
                 "periodic_encoding": specification["periodic"],
                 "metrics_holdout": {"mse": mse, "rmse": rmse, "r2": r2},
                 "training_rows": len(frame),
+                "data_quality": data_quality,
                 "random_state": SEED,
             },
             MODELS / f"{model_id}.joblib",
@@ -323,6 +333,11 @@ def fit_one(
         "feature_impacts": impacts,
         "visualizations": visualizations,
         "correlation_matrix": correlation_matrix,
+        "data_quality": data_quality,
+        "feature_ranges": {
+            feature: [float(frame[feature].min()), float(frame[feature].max())]
+            for feature in specification["features"]
+        },
         "data_preview": frame[
             specification["features"] + [specification["target"]]
         ]
@@ -346,7 +361,7 @@ def write_report(models: list[dict[str, Any]]) -> None:
         "",
         "1. **Comprensión del negocio:** estimar dólar, glucosa y consumo de energía a partir de las variables indicadas.",
         "2. **Comprensión de los datos:** se revisaron columnas, tipos, valores vacíos y registros no numéricos.",
-        "3. **Preparación:** se usaron los predictores y la variable objetivo especificados; para energía, hora y día de semana se codificaron de forma cíclica con seno y coseno.",
+        "3. **Preparación:** limpieza determinista antes de la partición; sin imputación ni eliminación automática de atípicos. Para energía, hora y día de semana se codificaron de forma cíclica con seno y coseno.",
         f"4. **Modelado:** regresión lineal múltiple; partición aleatoria de {1 - TEST_SIZE:.0%} entrenamiento y {TEST_SIZE:.0%} prueba (random_state={SEED}).",
         "5. **Evaluación:** MSE, RMSE y R² calculados únicamente sobre el conjunto de prueba.",
         "6. **Despliegue:** los modelos finales se reajustan con todos los registros y se guardan en formato joblib para uso posterior.",
@@ -361,6 +376,12 @@ def write_report(models: list[dict[str, Any]]) -> None:
                 f"## {model['name']}",
                 "",
                 f"- Registros: **{model['row_count']:,}**; prueba: **{model['test_row_count']:,}**.",
+                f"- Limpieza: **{model['data_quality']['input_rows']:,}** filas originales → **{model['row_count']:,}** conservadas; **{model['data_quality']['removed_rows']:,}** excluidas.",
+                f"- Motivos (sin solapamiento): faltantes {model['data_quality']['missing_rows']}; texto no numérico {model['data_quality']['non_numeric_rows']}; infinitos {model['data_quality']['non_finite_rows']}; dominio inválido {model['data_quality']['invalid_domain_rows']}; duplicados {model['data_quality']['duplicate_rows']}.",
+                f"- Celdas normalizadas: {model['data_quality']['normalized_cells']}. Atípicos conservados: {model['data_quality']['outlier_train_rows']} en entrenamiento y {model['data_quality']['outlier_test_rows']} en prueba.",
+                f"- Política: {model['data_quality']['policy']}",
+                f"- Atípicos: {model['data_quality']['outlier_policy']}",
+                *[f"- Advertencia: {warning}" for warning in model["data_quality"]["warnings"]],
                 f"- **MSE:** {model['metrics']['mse']:.6g} {model['unit']}².",
                 f"- **RMSE:** {model['metrics']['rmse']:.6g} {model['unit']}.",
                 f"- **R²:** {model['metrics']['r2']:.6f}.",
@@ -420,6 +441,7 @@ def build_analysis(*, persist_artifacts: bool = False) -> dict[str, Any]:
         "methodology": {
             "train_test_split": "80% entrenamiento / 20% prueba",
             "random_state": SEED,
+            "cleaning_method": POLICY,
             "periodic_encoding": (
                 "Hora (24 valores) y Día de la semana (7 valores) usan seno/coseno "
                 "para conservar su naturaleza cíclica."
@@ -432,8 +454,20 @@ def build_analysis(*, persist_artifacts: bool = False) -> dict[str, Any]:
     }
 
     if persist_artifacts:
+        PROCESSED.mkdir(parents=True, exist_ok=True)
+        for specification, model in zip(SPECIFICATIONS, results):
+            cleaned, _ = clean_dataset(
+                pd.read_csv(RAW / specification["file"], dtype=object), specification
+            )
+            cleaned.to_csv(PROCESSED / specification["file"], index=False)
+        (PROCESSED / "quality-report.json").write_text(
+            json.dumps(
+                {model["id"]: model["data_quality"] for model in results},
+                ensure_ascii=False, indent=2, allow_nan=False,
+            ), encoding="utf-8",
+        )
         API_OUTPUT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+            json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
         )
         write_report(results)
     return payload

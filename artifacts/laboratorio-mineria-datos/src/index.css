@@ -355,6 +355,7 @@
   .report-scatter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
   .academic-document.report-card { break-inside: auto !important; margin-top: 0; }
   .report-figure, .report-figure figcaption, .corr-table tr { break-inside: avoid; page-break-inside: avoid; }
+  .data-quality-summary { break-inside: avoid; page-break-inside: avoid; }
   .report-figure svg, .importance-bar, .corr-cell, .corr-scale { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   @page { margin: 0; }
   html, body { margin: 0; min-height: auto; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }

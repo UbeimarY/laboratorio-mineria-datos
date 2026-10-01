@@ -107,6 +107,8 @@ components:
               type: string
             importance_method:
               type: string
+            cleaning_method:
+              type: string
           required: [train_test_split, random_state, periodic_encoding, importance_method]
       required: [models, methodology]
     LabModelAnalysis:
@@ -147,6 +149,16 @@ components:
             $ref: "#/components/schemas/LabVisualization"
         correlation_matrix:
           $ref: "#/components/schemas/LabCorrelationMatrix"
+        data_quality:
+          $ref: "#/components/schemas/LabDataQuality"
+        feature_ranges:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: number
+            minItems: 2
+            maxItems: 2
         data_preview:
           type: array
           items:
@@ -168,9 +180,44 @@ components:
         - visualizations
         - data_preview
         - conclusion
+    LabDataQuality:
+      type: object
+      description: Auditoría de limpieza. Los motivos de exclusión son mutuamente excluyentes; los atípicos se conservan.
+      properties:
+        input_rows:
+          type: integer
+        output_rows:
+          type: integer
+        removed_rows:
+          type: integer
+        duplicate_rows:
+          type: integer
+        missing_rows:
+          type: integer
+        non_numeric_rows:
+          type: integer
+        non_finite_rows:
+          type: integer
+        invalid_domain_rows:
+          type: integer
+        normalized_cells:
+          type: integer
+        outlier_train_rows:
+          type: integer
+        outlier_test_rows:
+          type: integer
+        policy:
+          type: string
+        outlier_policy:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+      required: [input_rows, output_rows, removed_rows, duplicate_rows, missing_rows, non_numeric_rows, non_finite_rows, invalid_domain_rows, normalized_cells, outlier_train_rows, outlier_test_rows, policy, outlier_policy, warnings]
     LabCorrelationMatrix:
       type: object
-      description: Correlación de Pearson de las variables originales sobre todas las filas del CSV, no sobre la muestra gráfica.
+      description: Correlación de Pearson de las variables originales sobre todas las filas conservadas tras limpiar el CSV, no sobre la muestra gráfica.
       properties:
         features:
           type: array

@@ -7,7 +7,7 @@
  */
 
 /**
- * Correlación de Pearson de las variables originales sobre todas las filas del CSV, no sobre la muestra gráfica.
+ * Correlación de Pearson de las variables originales sobre todas las filas conservadas tras limpiar el CSV, no sobre la muestra gráfica.
  */
 export interface LabCorrelationMatrix {
   features: string[];

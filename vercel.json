@@ -17,7 +17,7 @@
       "includeFiles": "{vercel_support/**,artifacts/api-server/data/lab-analysis.json}"
     },
     "api/lab/train.py": {
-      "includeFiles": "{vercel_support/**,artifacts/laboratorio-mineria-datos/analysis/train_models.py,artifacts/laboratorio-mineria-datos/data/raw/*.csv}"
+      "includeFiles": "{vercel_support/**,artifacts/laboratorio-mineria-datos/analysis/*.py,artifacts/laboratorio-mineria-datos/data/raw/*.csv}"
     }
   }
 }

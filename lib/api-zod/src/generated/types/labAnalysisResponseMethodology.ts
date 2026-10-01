@@ -11,4 +11,5 @@ export type LabAnalysisResponseMethodology = {
   random_state: number;
   periodic_encoding: string;
   importance_method: string;
+  cleaning_method?: string;
 };

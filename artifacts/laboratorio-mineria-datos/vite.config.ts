@@ -56,6 +56,19 @@ export default defineConfig({
     strictPort: true,
     host: '0.0.0.0',
     allowedHosts: true,
+    watch: {
+      // El entrenador escribe estos resultados durante una solicitud activa.
+      // No deben provocar HMR ni recargar la página y cancelar el POST.
+      ignored: [
+        '**/data/processed/**',
+        '**/api-server/data/**',
+        '**/analysis/models/**',
+        '**/analysis/figures/**',
+        '**/analysis/INFORME_CRISP_DM.md',
+        '**/__pycache__/**',
+        '**/*.pyc',
+      ],
+    },
     fs: {
       strict: true,
     },

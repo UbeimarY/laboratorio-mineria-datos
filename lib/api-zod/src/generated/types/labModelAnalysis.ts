@@ -6,8 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { LabCorrelationMatrix } from './labCorrelationMatrix';
+import type { LabDataQuality } from './labDataQuality';
 import type { LabFeatureImpact } from './labFeatureImpact';
 import type { LabModelAnalysisDataPreviewItem } from './labModelAnalysisDataPreviewItem';
+import type { LabModelAnalysisFeatureRanges } from './labModelAnalysisFeatureRanges';
 import type { LabModelAnalysisId } from './labModelAnalysisId';
 import type { LabModelAnalysisMetrics } from './labModelAnalysisMetrics';
 import type { LabVisualization } from './labVisualization';
@@ -24,6 +26,8 @@ export interface LabModelAnalysis {
   feature_impacts: LabFeatureImpact[];
   visualizations: LabVisualization[];
   correlation_matrix?: LabCorrelationMatrix;
+  data_quality?: LabDataQuality;
+  feature_ranges?: LabModelAnalysisFeatureRanges;
   data_preview: LabModelAnalysisDataPreviewItem[];
   conclusion: string;
 }

@@ -8,7 +8,7 @@ Aplicar CRISP-DM a tres conjuntos de datos, entrenar regresiones lineales múlti
 
 1. **Comprensión del negocio:** estimar dólar, glucosa y consumo de energía a partir de las variables indicadas.
 2. **Comprensión de los datos:** se revisaron columnas, tipos, valores vacíos y registros no numéricos.
-3. **Preparación:** se usaron los predictores y la variable objetivo especificados; para energía, hora y día de semana se codificaron de forma cíclica con seno y coseno.
+3. **Preparación:** limpieza determinista antes de la partición; sin imputación ni eliminación automática de atípicos. Para energía, hora y día de semana se codificaron de forma cíclica con seno y coseno.
 4. **Modelado:** regresión lineal múltiple; partición aleatoria de 80% entrenamiento y 20% prueba (random_state=42).
 5. **Evaluación:** MSE, RMSE y R² calculados únicamente sobre el conjunto de prueba.
 6. **Despliegue:** los modelos finales se reajustan con todos los registros y se guardan en formato joblib para uso posterior.
@@ -18,6 +18,11 @@ La importancia comparativa usa coeficientes estandarizados agrupados por variabl
 ## Precio del dólar
 
 - Registros: **500**; prueba: **100**.
+- Limpieza: **500** filas originales → **500** conservadas; **0** excluidas.
+- Motivos (sin solapamiento): faltantes 0; texto no numérico 0; infinitos 0; dominio inválido 0; duplicados 0.
+- Celdas normalizadas: 0. Atípicos conservados: 4 en entrenamiento y 3 en prueba.
+- Política: Se recortan espacios y se interpreta una coma decimal simple (sin separadores de miles). Se excluyen, en este orden, filas con faltantes, texto no numérico, infinitos, valores fuera del dominio y duplicados exactos de predictores y objetivo. Cada fila excluida tiene un único motivo. No se imputan valores ni se modifica el CSV original.
+- Atípicos: Diagnóstico IQR: límites Q1 − 1,5×IQR y Q3 + 1,5×IQR calculados solo en entrenamiento, sin variables cíclicas. Las filas señaladas se conservan; un valor atípico no implica un error.
 - **MSE:** 2376.97 COP².
 - **RMSE:** 48.7542 COP.
 - **R²:** 0.996313.
@@ -40,6 +45,11 @@ La importancia comparativa usa coeficientes estandarizados agrupados por variabl
 ## Nivel de glucosa
 
 - Registros: **2,000**; prueba: **400**.
+- Limpieza: **2,000** filas originales → **2,000** conservadas; **0** excluidas.
+- Motivos (sin solapamiento): faltantes 0; texto no numérico 0; infinitos 0; dominio inválido 0; duplicados 0.
+- Celdas normalizadas: 0. Atípicos conservados: 17 en entrenamiento y 2 en prueba.
+- Política: Se recortan espacios y se interpreta una coma decimal simple (sin separadores de miles). Se excluyen, en este orden, filas con faltantes, texto no numérico, infinitos, valores fuera del dominio y duplicados exactos de predictores y objetivo. Cada fila excluida tiene un único motivo. No se imputan valores ni se modifica el CSV original.
+- Atípicos: Diagnóstico IQR: límites Q1 − 1,5×IQR y Q3 + 1,5×IQR calculados solo en entrenamiento, sin variables cíclicas. Las filas señaladas se conservan; un valor atípico no implica un error.
 - **MSE:** 233.693 mg/dL².
 - **RMSE:** 15.287 mg/dL.
 - **R²:** 0.681372.
@@ -62,6 +72,11 @@ La importancia comparativa usa coeficientes estandarizados agrupados por variabl
 ## Consumo de energía
 
 - Registros: **10,000**; prueba: **2,000**.
+- Limpieza: **10,000** filas originales → **10,000** conservadas; **0** excluidas.
+- Motivos (sin solapamiento): faltantes 0; texto no numérico 0; infinitos 0; dominio inválido 0; duplicados 0.
+- Celdas normalizadas: 0. Atípicos conservados: 109 en entrenamiento y 27 en prueba.
+- Política: Se recortan espacios y se interpreta una coma decimal simple (sin separadores de miles). Se excluyen, en este orden, filas con faltantes, texto no numérico, infinitos, valores fuera del dominio y duplicados exactos de predictores y objetivo. Cada fila excluida tiene un único motivo. No se imputan valores ni se modifica el CSV original.
+- Atípicos: Diagnóstico IQR: límites Q1 − 1,5×IQR y Q3 + 1,5×IQR calculados solo en entrenamiento, sin variables cíclicas. Las filas señaladas se conservan; un valor atípico no implica un error.
 - **MSE:** 907.889 kWh².
 - **RMSE:** 30.1312 kWh.
 - **R²:** 0.781904.

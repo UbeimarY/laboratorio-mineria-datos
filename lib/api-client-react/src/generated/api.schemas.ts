@@ -14,6 +14,7 @@ export type LabAnalysisResponseMethodology = {
   random_state: number;
   periodic_encoding: string;
   importance_method: string;
+  cleaning_method?: string;
 };
 
 export type LabModelAnalysisId = typeof LabModelAnalysisId[keyof typeof LabModelAnalysisId];
@@ -47,7 +48,7 @@ export interface LabVisualization {
 }
 
 /**
- * Correlación de Pearson de las variables originales sobre todas las filas del CSV, no sobre la muestra gráfica.
+ * Correlación de Pearson de las variables originales sobre todas las filas conservadas tras limpiar el CSV, no sobre la muestra gráfica.
  */
 export interface LabCorrelationMatrix {
   features: string[];
@@ -56,11 +57,33 @@ export interface LabCorrelationMatrix {
   row_count: number;
 }
 
+/**
+ * Auditoría de limpieza. Los motivos de exclusión son mutuamente excluyentes; los atípicos se conservan.
+ */
+export interface LabDataQuality {
+  input_rows: number;
+  output_rows: number;
+  removed_rows: number;
+  duplicate_rows: number;
+  missing_rows: number;
+  non_numeric_rows: number;
+  non_finite_rows: number;
+  invalid_domain_rows: number;
+  normalized_cells: number;
+  outlier_train_rows: number;
+  outlier_test_rows: number;
+  policy: string;
+  outlier_policy: string;
+  warnings: string[];
+}
+
 export type LabModelAnalysisMetrics = {
   mse: number;
   rmse: number;
   r2: number;
 };
+
+export type LabModelAnalysisFeatureRanges = {[key: string]: number[]};
 
 export type LabModelAnalysisDataPreviewItem = {[key: string]: number};
 
@@ -76,6 +99,8 @@ export interface LabModelAnalysis {
   feature_impacts: LabFeatureImpact[];
   visualizations: LabVisualization[];
   correlation_matrix?: LabCorrelationMatrix;
+  data_quality?: LabDataQuality;
+  feature_ranges?: LabModelAnalysisFeatureRanges;
   data_preview: LabModelAnalysisDataPreviewItem[];
   conclusion: string;
 }

@@ -111,6 +111,13 @@ def predict_value(body: Any) -> dict[str, Any]:
     if supplied != sorted(expected):
         raise ValueError(f"Las variables requeridas son: {', '.join(expected)}.")
 
+    analysis = read_analysis()
+    model = next(
+        (item for item in analysis["models"] if item["id"] == model_id), None
+    )
+    if model is None:
+        raise ValueError("No se encontró el modelo solicitado.")
+
     for key, value in features.items():
         if (
             isinstance(value, bool)
@@ -118,19 +125,17 @@ def predict_value(body: Any) -> dict[str, Any]:
             or not math.isfinite(value)
         ):
             raise ValueError(f"{key} debe ser un número finito.")
-        low, high = TRAINING_RANGES[model_id][key]
+        low, high = model.get("feature_ranges", {}).get(key, TRAINING_RANGES[model_id][key])
         if value < low or value > high:
             raise ValueError(
                 f"{key} debe estar entre {low} y {high}, "
-                "el rango disponible en el dataset."
+                "el rango de los datos usados por el modelo."
             )
 
-    analysis = read_analysis()
-    model = next(
-        (item for item in analysis["models"] if item["id"] == model_id), None
-    )
-    if model is None:
-        raise ValueError("No se encontró el modelo solicitado.")
+    if model_id == "energia" and any(
+        not float(features[key]).is_integer() for key in ("Hora", "Dia_Semana")
+    ):
+        raise ValueError("La hora y el día de semana deben ser números enteros.")
 
     coefficients = model["prediction_coefficients"]
     prediction = model["intercept"]

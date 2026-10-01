@@ -20,6 +20,11 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary Obtiene resultados, coeficientes y datos de visualización de los tres modelos
  */
+export const getLabAnalysisResponseModelsItemFeatureRangesMinOne = 2;
+export const getLabAnalysisResponseModelsItemFeatureRangesMaxOne = 2;
+
+
+
 export const GetLabAnalysisResponse = zod.object({
   "models": zod.array(zod.object({
   "id": zod.enum(['dolar', 'glucosa', 'energia']),
@@ -56,7 +61,24 @@ export const GetLabAnalysisResponse = zod.object({
   "labels": zod.array(zod.string()),
   "values": zod.array(zod.array(zod.number().nullable())),
   "row_count": zod.number().int()
-}).optional().describe('Correlación de Pearson de las variables originales sobre todas las filas del CSV, no sobre la muestra gráfica.'),
+}).optional().describe('Correlación de Pearson de las variables originales sobre todas las filas conservadas tras limpiar el CSV, no sobre la muestra gráfica.'),
+  "data_quality": zod.object({
+  "input_rows": zod.number().int(),
+  "output_rows": zod.number().int(),
+  "removed_rows": zod.number().int(),
+  "duplicate_rows": zod.number().int(),
+  "missing_rows": zod.number().int(),
+  "non_numeric_rows": zod.number().int(),
+  "non_finite_rows": zod.number().int(),
+  "invalid_domain_rows": zod.number().int(),
+  "normalized_cells": zod.number().int(),
+  "outlier_train_rows": zod.number().int(),
+  "outlier_test_rows": zod.number().int(),
+  "policy": zod.string(),
+  "outlier_policy": zod.string(),
+  "warnings": zod.array(zod.string())
+}).optional().describe('Auditoría de limpieza. Los motivos de exclusión son mutuamente excluyentes; los atípicos se conservan.'),
+  "feature_ranges": zod.record(zod.string(), zod.array(zod.number()).min(getLabAnalysisResponseModelsItemFeatureRangesMinOne).max(getLabAnalysisResponseModelsItemFeatureRangesMaxOne)).optional(),
   "data_preview": zod.array(zod.record(zod.string(), zod.number())),
   "conclusion": zod.string()
 })),
@@ -64,7 +86,8 @@ export const GetLabAnalysisResponse = zod.object({
   "train_test_split": zod.string(),
   "random_state": zod.number().int(),
   "periodic_encoding": zod.string(),
-  "importance_method": zod.string()
+  "importance_method": zod.string(),
+  "cleaning_method": zod.string().optional()
 })
 })
 
@@ -75,6 +98,11 @@ export const GetLabAnalysisResponse = zod.object({
 export const TrainLabModelsBody = zod.object({
   "source": zod.enum(['included_csv']).describe('Entrenar con los tres archivos CSV incluidos en el laboratorio')
 })
+
+export const trainLabModelsResponseModelsItemFeatureRangesMinOne = 2;
+export const trainLabModelsResponseModelsItemFeatureRangesMaxOne = 2;
+
+
 
 export const TrainLabModelsResponse = zod.object({
   "models": zod.array(zod.object({
@@ -112,7 +140,24 @@ export const TrainLabModelsResponse = zod.object({
   "labels": zod.array(zod.string()),
   "values": zod.array(zod.array(zod.number().nullable())),
   "row_count": zod.number().int()
-}).optional().describe('Correlación de Pearson de las variables originales sobre todas las filas del CSV, no sobre la muestra gráfica.'),
+}).optional().describe('Correlación de Pearson de las variables originales sobre todas las filas conservadas tras limpiar el CSV, no sobre la muestra gráfica.'),
+  "data_quality": zod.object({
+  "input_rows": zod.number().int(),
+  "output_rows": zod.number().int(),
+  "removed_rows": zod.number().int(),
+  "duplicate_rows": zod.number().int(),
+  "missing_rows": zod.number().int(),
+  "non_numeric_rows": zod.number().int(),
+  "non_finite_rows": zod.number().int(),
+  "invalid_domain_rows": zod.number().int(),
+  "normalized_cells": zod.number().int(),
+  "outlier_train_rows": zod.number().int(),
+  "outlier_test_rows": zod.number().int(),
+  "policy": zod.string(),
+  "outlier_policy": zod.string(),
+  "warnings": zod.array(zod.string())
+}).optional().describe('Auditoría de limpieza. Los motivos de exclusión son mutuamente excluyentes; los atípicos se conservan.'),
+  "feature_ranges": zod.record(zod.string(), zod.array(zod.number()).min(trainLabModelsResponseModelsItemFeatureRangesMinOne).max(trainLabModelsResponseModelsItemFeatureRangesMaxOne)).optional(),
   "data_preview": zod.array(zod.record(zod.string(), zod.number())),
   "conclusion": zod.string()
 })),
@@ -120,7 +165,8 @@ export const TrainLabModelsResponse = zod.object({
   "train_test_split": zod.string(),
   "random_state": zod.number().int(),
   "periodic_encoding": zod.string(),
-  "importance_method": zod.string()
+  "importance_method": zod.string(),
+  "cleaning_method": zod.string().optional()
 })
 })
 

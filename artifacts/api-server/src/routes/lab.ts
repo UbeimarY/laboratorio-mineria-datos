@@ -126,34 +126,6 @@ router.post("/lab/predict", (req, res) => {
     res.status(400).json({ error: `Las variables requeridas son: ${expected.join(", ")}.` });
     return;
   }
-  for (const [key, value] of Object.entries(features)) {
-    if (typeof value !== "number" || !Number.isFinite(value)) {
-      res.status(400).json({ error: `${key} debe ser un número finito.` });
-      return;
-    }
-    const range = trainingRanges[modelId][key];
-    if (range && (value < range[0] || value > range[1])) {
-      res.status(400).json({
-        error: `${key} debe estar entre ${range[0]} y ${range[1]}, el rango disponible en el dataset.`,
-      });
-      return;
-    }
-  }
-  if (modelId === "energia") {
-    const { Hora, Dia_Semana } = features;
-    if (
-      Hora < 1 ||
-      Hora > 24 ||
-      Dia_Semana < 1 ||
-      Dia_Semana > 7
-    ) {
-      res.status(400).json({
-        error: "La hora debe estar entre 1 y 24 y el día de semana entre 1 y 7.",
-      });
-      return;
-    }
-  }
-
   let model: LabModelWithCoefficients;
   try {
     const analysis = readAnalysis();
@@ -165,10 +137,38 @@ router.post("/lab/predict", (req, res) => {
     model = found;
   } catch {
     res.status(503).json({
-      error:
-        "No hay modelos entrenados. Ejecuta python analysis/train_models.py antes de predecir.",
+      error: "No hay modelos entrenados. Ejecuta python analysis/train_models.py antes de predecir.",
     });
     return;
+  }
+  for (const [key, value] of Object.entries(features)) {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      res.status(400).json({ error: `${key} debe ser un número finito.` });
+      return;
+    }
+    const range = model.feature_ranges?.[key] ?? trainingRanges[modelId][key];
+    if (range && (value < range[0] || value > range[1])) {
+      res.status(400).json({
+        error: `${key} debe estar entre ${range[0]} y ${range[1]}, el rango de los datos usados por el modelo.`,
+      });
+      return;
+    }
+  }
+  if (modelId === "energia") {
+    const { Hora, Dia_Semana } = features;
+    if (
+      Hora < 1 ||
+      Hora > 24 ||
+      Dia_Semana < 1 ||
+      Dia_Semana > 7 ||
+      !Number.isInteger(Hora) ||
+      !Number.isInteger(Dia_Semana)
+    ) {
+      res.status(400).json({
+        error: "La hora y el día de semana deben ser enteros: hora entre 1 y 24, día entre 1 y 7.",
+      });
+      return;
+    }
   }
 
   const coefficients = model.prediction_coefficients;

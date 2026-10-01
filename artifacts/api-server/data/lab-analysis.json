@@ -4308,6 +4308,36 @@
         ],
         "row_count": 500
       },
+      "data_quality": {
+        "input_rows": 500,
+        "normalized_cells": 0,
+        "outlier_train_rows": 4,
+        "outlier_test_rows": 3,
+        "policy": "Se recortan espacios y se interpreta una coma decimal simple (sin separadores de miles). Se excluyen, en este orden, filas con faltantes, texto no numérico, infinitos, valores fuera del dominio y duplicados exactos de predictores y objetivo. Cada fila excluida tiene un único motivo. No se imputan valores ni se modifica el CSV original.",
+        "outlier_policy": "Diagnóstico IQR: límites Q1 − 1,5×IQR y Q3 + 1,5×IQR calculados solo en entrenamiento, sin variables cíclicas. Las filas señaladas se conservan; un valor atípico no implica un error.",
+        "warnings": [],
+        "missing_rows": 0,
+        "non_numeric_rows": 0,
+        "non_finite_rows": 0,
+        "invalid_domain_rows": 0,
+        "duplicate_rows": 0,
+        "output_rows": 500,
+        "removed_rows": 0
+      },
+      "feature_ranges": {
+        "Dia": [
+          1.0,
+          500.0
+        ],
+        "Inflacion": [
+          0.0037936632996546,
+          0.0392636574532736
+        ],
+        "Tasa_interes": [
+          3.6515566785292144,
+          6.316191032418695
+        ]
+      },
       "data_preview": [
         {
           "Dia": 1.0,
@@ -8667,6 +8697,36 @@
           ]
         ],
         "row_count": 2000
+      },
+      "data_quality": {
+        "input_rows": 2000,
+        "normalized_cells": 0,
+        "outlier_train_rows": 17,
+        "outlier_test_rows": 2,
+        "policy": "Se recortan espacios y se interpreta una coma decimal simple (sin separadores de miles). Se excluyen, en este orden, filas con faltantes, texto no numérico, infinitos, valores fuera del dominio y duplicados exactos de predictores y objetivo. Cada fila excluida tiene un único motivo. No se imputan valores ni se modifica el CSV original.",
+        "outlier_policy": "Diagnóstico IQR: límites Q1 − 1,5×IQR y Q3 + 1,5×IQR calculados solo en entrenamiento, sin variables cíclicas. Las filas señaladas se conservan; un valor atípico no implica un error.",
+        "warnings": [],
+        "missing_rows": 0,
+        "non_numeric_rows": 0,
+        "non_finite_rows": 0,
+        "invalid_domain_rows": 0,
+        "duplicate_rows": 0,
+        "output_rows": 2000,
+        "removed_rows": 0
+      },
+      "feature_ranges": {
+        "Edad": [
+          20.0,
+          79.0
+        ],
+        "IMC": [
+          10.586716611072555,
+          39.43022745196606
+        ],
+        "Actividad_Fisica": [
+          0.0,
+          9.0
+        ]
       },
       "data_preview": [
         {
@@ -13030,6 +13090,36 @@
         ],
         "row_count": 10000
       },
+      "data_quality": {
+        "input_rows": 10000,
+        "normalized_cells": 0,
+        "outlier_train_rows": 109,
+        "outlier_test_rows": 27,
+        "policy": "Se recortan espacios y se interpreta una coma decimal simple (sin separadores de miles). Se excluyen, en este orden, filas con faltantes, texto no numérico, infinitos, valores fuera del dominio y duplicados exactos de predictores y objetivo. Cada fila excluida tiene un único motivo. No se imputan valores ni se modifica el CSV original.",
+        "outlier_policy": "Diagnóstico IQR: límites Q1 − 1,5×IQR y Q3 + 1,5×IQR calculados solo en entrenamiento, sin variables cíclicas. Las filas señaladas se conservan; un valor atípico no implica un error.",
+        "warnings": [],
+        "missing_rows": 0,
+        "non_numeric_rows": 0,
+        "non_finite_rows": 0,
+        "invalid_domain_rows": 0,
+        "duplicate_rows": 0,
+        "output_rows": 10000,
+        "removed_rows": 0
+      },
+      "feature_ranges": {
+        "Temperatura": [
+          5.387998741908287,
+          44.63118853218163
+        ],
+        "Hora": [
+          1.0,
+          24.0
+        ],
+        "Dia_Semana": [
+          1.0,
+          7.0
+        ]
+      },
       "data_preview": [
         {
           "Temperatura": 28.89180538083319,
@@ -13086,6 +13176,7 @@
   "methodology": {
     "train_test_split": "80% entrenamiento / 20% prueba",
     "random_state": 42,
+    "cleaning_method": "Se recortan espacios y se interpreta una coma decimal simple (sin separadores de miles). Se excluyen, en este orden, filas con faltantes, texto no numérico, infinitos, valores fuera del dominio y duplicados exactos de predictores y objetivo. Cada fila excluida tiene un único motivo. No se imputan valores ni se modifica el CSV original.",
     "periodic_encoding": "Hora (24 valores) y Día de la semana (7 valores) usan seno/coseno para conservar su naturaleza cíclica.",
     "importance_method": "Magnitud de coeficientes estandarizados agrupada por variable original; es relativa y no causal."
   }

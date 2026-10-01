@@ -1,0 +1,50 @@
+{
+  "dolar": {
+    "input_rows": 500,
+    "normalized_cells": 0,
+    "outlier_train_rows": 4,
+    "outlier_test_rows": 3,
+    "policy": "Se recortan espacios y se interpreta una coma decimal simple (sin separadores de miles). Se excluyen, en este orden, filas con faltantes, texto no numérico, infinitos, valores fuera del dominio y duplicados exactos de predictores y objetivo. Cada fila excluida tiene un único motivo. No se imputan valores ni se modifica el CSV original.",
+    "outlier_policy": "Diagnóstico IQR: límites Q1 − 1,5×IQR y Q3 + 1,5×IQR calculados solo en entrenamiento, sin variables cíclicas. Las filas señaladas se conservan; un valor atípico no implica un error.",
+    "warnings": [],
+    "missing_rows": 0,
+    "non_numeric_rows": 0,
+    "non_finite_rows": 0,
+    "invalid_domain_rows": 0,
+    "duplicate_rows": 0,
+    "output_rows": 500,
+    "removed_rows": 0
+  },
+  "glucosa": {
+    "input_rows": 2000,
+    "normalized_cells": 0,
+    "outlier_train_rows": 17,
+    "outlier_test_rows": 2,
+    "policy": "Se recortan espacios y se interpreta una coma decimal simple (sin separadores de miles). Se excluyen, en este orden, filas con faltantes, texto no numérico, infinitos, valores fuera del dominio y duplicados exactos de predictores y objetivo. Cada fila excluida tiene un único motivo. No se imputan valores ni se modifica el CSV original.",
+    "outlier_policy": "Diagnóstico IQR: límites Q1 − 1,5×IQR y Q3 + 1,5×IQR calculados solo en entrenamiento, sin variables cíclicas. Las filas señaladas se conservan; un valor atípico no implica un error.",
+    "warnings": [],
+    "missing_rows": 0,
+    "non_numeric_rows": 0,
+    "non_finite_rows": 0,
+    "invalid_domain_rows": 0,
+    "duplicate_rows": 0,
+    "output_rows": 2000,
+    "removed_rows": 0
+  },
+  "energia": {
+    "input_rows": 10000,
+    "normalized_cells": 0,
+    "outlier_train_rows": 109,
+    "outlier_test_rows": 27,
+    "policy": "Se recortan espacios y se interpreta una coma decimal simple (sin separadores de miles). Se excluyen, en este orden, filas con faltantes, texto no numérico, infinitos, valores fuera del dominio y duplicados exactos de predictores y objetivo. Cada fila excluida tiene un único motivo. No se imputan valores ni se modifica el CSV original.",
+    "outlier_policy": "Diagnóstico IQR: límites Q1 − 1,5×IQR y Q3 + 1,5×IQR calculados solo en entrenamiento, sin variables cíclicas. Las filas señaladas se conservan; un valor atípico no implica un error.",
+    "warnings": [],
+    "missing_rows": 0,
+    "non_numeric_rows": 0,
+    "non_finite_rows": 0,
+    "invalid_domain_rows": 0,
+    "duplicate_rows": 0,
+    "output_rows": 10000,
+    "removed_rows": 0
+  }
+}

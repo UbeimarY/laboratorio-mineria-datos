@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import { AlertCircle, ArrowLeft, Printer, RefreshCw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScatterFigure, ImportanceFigure, CorrelationFigure } from '@/components/report/figures';
+import { DataQualitySummary } from '@/components/data-quality-summary';
 
 const number = (value: number, digits = 3) => new Intl.NumberFormat('es-CO', { maximumFractionDigits: digits }).format(value);
 
@@ -10,8 +11,8 @@ function CrispDmDiagram() {
   const steps = [
     ['01', 'Comprensión del problema', 'Dólar · glucosa · energía'],
     ['02', 'Comprensión de los datos', 'CSV incluidos · validación'],
-    ['03', 'Preparación', 'Variables originales · ciclos'],
-    ['04', 'Modelado', 'Regresión lineal múltiple'],
+    ['03', 'Preparación y limpieza', 'Auditoría · exclusión · normalización'],
+    ['04', 'Transformación y modelado', 'Ciclos · regresión lineal'],
     ['05', 'Evaluación', 'MSE · RMSE · R² en prueba'],
     ['06', 'Despliegue', 'Predicción con modelo final'],
   ];
@@ -63,9 +64,10 @@ function ModelResults({ model, base }: { model: LabModelAnalysis; base: number }
     <section className="academic-section" data-testid={`section-report-model-${model.id}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="serif text-[22px] font-medium">{model.name}</h3>
-        <span className="mono text-[9px] text-muted-foreground">{model.row_count} registros · {model.test_row_count} en prueba</span>
+        <span className="mono text-[9px] text-muted-foreground">{model.data_quality ? `${model.data_quality.output_rows} filas retenidas de ${model.data_quality.input_rows} del CSV` : `${model.row_count} filas retenidas`} · {model.test_row_count} en prueba</span>
       </div>
       <p className="mt-1 text-[11px] text-muted-foreground">Variable respuesta: <strong className="font-semibold text-foreground">{model.target}</strong> ({model.unit}).</p>
+      <DataQualitySummary model={model} />
       <ModelFlow model={model} />
       <p className="mt-1 text-[9px] text-muted-foreground"><strong className="font-semibold text-foreground">Figura {base}.</strong> Flujo de {model.name}: predictores, regresión lineal y variable respuesta.</p>
       <ScatterFigure model={model} number={base + 1} />
@@ -146,6 +148,7 @@ export default function Informe() {
               <div><dt className="eyebrow text-[8px] text-muted-foreground">Semilla aleatoria</dt><dd className="mono mt-1" data-testid="text-report-seed">{query.data.methodology.random_state}</dd></div>
               <div><dt className="eyebrow text-[8px] text-muted-foreground">Codificación periódica</dt><dd className="mt-1" data-testid="text-report-periodic">{query.data.methodology.periodic_encoding}</dd></div>
               <div><dt className="eyebrow text-[8px] text-muted-foreground">Importancia</dt><dd className="mt-1" data-testid="text-report-importance">{query.data.methodology.importance_method}</dd></div>
+              {query.data.methodology.cleaning_method && <div className="sm:col-span-2"><dt className="eyebrow text-[8px] text-muted-foreground">Limpieza de datos</dt><dd className="mt-1" data-testid="text-report-cleaning-method">{query.data.methodology.cleaning_method}</dd></div>}
             </dl>}
           </section>
 
@@ -164,7 +167,8 @@ export default function Informe() {
           <section className="academic-section">
             <h2 className="serif text-[22px] font-medium">Alcances y consideraciones</h2>
             <ol className="mt-3 list-decimal space-y-2 pl-5 text-[11px] leading-relaxed">
-              <li>La evaluación se realiza sobre observaciones reservadas antes del ajuste del modelo de evaluación, conforme a la partición indicada.</li>
+              <li>Los conteos de limpieza se reportan por modelo: las filas incompletas o inválidas se excluyen sin imputación; el CSV original se mantiene intacto. Los valores atípicos se señalan con límites IQR obtenidos solo del entrenamiento y permanecen en el análisis.</li>
+              <li>La evaluación se realiza sobre observaciones retenidas y reservadas antes del ajuste del modelo de evaluación, conforme a la partición indicada.</li>
               <li>Después de medir el desempeño, el entrenador vuelve a ajustar una regresión final con los registros disponibles para el uso predictivo.</li>
               <li>En energía, la hora y el día de semana se expresan cíclicamente con componentes seno y coseno; así se conserva la continuidad entre los extremos de cada ciclo.</li>
               <li>Los resultados describen las asociaciones dentro de estos conjuntos de práctica. No prueban relaciones causales ni garantizan extrapolaciones fuera de los rangos observados.</li>

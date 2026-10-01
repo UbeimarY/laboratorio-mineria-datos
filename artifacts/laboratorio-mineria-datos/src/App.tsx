@@ -19,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Informe from '@/pages/informe';
 import { TrainingTools } from '@/components/training-tools';
+import { DataQualitySummary } from '@/components/data-quality-summary';
 
 type CaseId = 'dolar' | 'glucosa' | 'energia';
 type FeatureSpec = { key: string; label: string; unit?: string; min: number; max: number; step: number; initial: number; help?: string };
@@ -67,6 +68,7 @@ function ScatterPanel({ model, visualization, isDark, color }: {
   isDark: boolean;
   color: string;
 }) {
+  const retainedRows = model.data_quality?.output_rows ?? model.row_count;
   const points = visualization.points.map((point) => ({ predictor: point.x, outcome: point.y }));
   const tick = isDark ? '#a7b3b4' : '#75817e';
   const grid = isDark ? 'rgba(218,230,224,.12)' : '#e4e4dc';
@@ -79,7 +81,7 @@ function ScatterPanel({ model, visualization, isDark, color }: {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[13px] font-semibold">{visualization.label}</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">Predictor frente a {model.target}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">Predictor frente a {model.target} · muestra de filas retenidas</p>
         </div>
         {points.length > 0 && <CSVLink data={exportData} filename={`${safeFilename(model.name)}-${safeFilename(visualization.label)}.csv`} className="icon-control print:hidden" data-testid={`link-export-${model.id}-${visualization.feature}`} aria-label={`Descargar CSV de ${visualization.label}`} title="Descargar datos CSV"><Download size={14} /></CSVLink>}
       </div>
@@ -98,7 +100,7 @@ function ScatterPanel({ model, visualization, isDark, color }: {
       ) : (
         <div className="mt-3 flex h-[220px] items-center justify-center border border-dashed report-rule text-xs text-muted-foreground">Sin puntos disponibles para este predictor.</div>
       )}
-      <p className="mt-2 text-[10px] text-muted-foreground">{points.length} observaciones · exportación CSV</p>
+      <p className="mt-2 text-[10px] text-muted-foreground">{points.length} puntos mostrados · {points.length === 0 ? 'sin puntos disponibles' : points.length < retainedRows ? 'muestra aleatoria con semilla 42, máximo 350' : 'todas las filas retenidas'}; retenidas: {num(retainedRows, 0)} · CSV original: {num(model.data_quality?.input_rows ?? model.row_count, 0)} filas · exportación CSV</p>
     </section>
   );
 }
@@ -107,12 +109,32 @@ function PredictionForm({ model, spec, onPredict, pending, result, error }: {
   model: LabModelAnalysis; spec: typeof CASES[CaseId]; onPredict: (features: Record<string, number>) => void;
   pending: boolean; result?: { prediction: number; target: string; unit: string } | null; error?: string | null;
 }) {
-  const initial = useMemo(() => Object.fromEntries(spec.features.map((field) => [field.key, field.initial])), [spec]);
-  const [values, setValues] = useState<Record<string, number>>(initial);
+  const bounds = useMemo(() => Object.fromEntries(spec.features.map((field) => {
+    const range = model.feature_ranges?.[field.key];
+    if (!model.feature_ranges) {
+      return [field.key, [field.min, field.max]];
+    }
+    if (!range || range.length < 2 || !Number.isFinite(range[0]) || !Number.isFinite(range[1]) || range[0] > range[1]) {
+      return [field.key, [undefined, undefined]];
+    }
+    const displayScale = model.id === 'dolar' && field.key === 'Inflacion' ? 100 : 1;
+    return [field.key, [range[0] * displayScale, range[1] * displayScale]];
+  })), [model.feature_ranges, model.id, spec]);
+  const initial = useMemo(() => Object.fromEntries(spec.features.map((field) => {
+    const [min, max] = bounds[field.key];
+    const value = min !== undefined && max !== undefined ? Math.min(max, Math.max(min, field.initial)) : field.initial;
+    return [field.key, String(value)];
+  })), [bounds, spec]);
+  const [values, setValues] = useState<Record<string, string>>(initial);
   useEffect(() => setValues(initial), [initial, model.id]);
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const apiValues = { ...values };
+    const apiValues: Record<string, number> = {};
+    for (const field of spec.features) {
+      const value = Number(values[field.key]);
+      if (values[field.key] === '' || !Number.isFinite(value)) return;
+      apiValues[field.key] = value;
+    }
     if (model.id === 'dolar') apiValues.Inflacion /= 100;
     onPredict(apiValues);
   };
@@ -134,7 +156,7 @@ function PredictionForm({ model, spec, onPredict, pending, result, error }: {
                 {field.label}<kbd className="mono text-[9px] font-normal text-muted-foreground">0{index + 1}</kbd>
               </span>
               <div className="relative">
-              <input aria-label={field.label} data-testid={`input-predict-${model.id}-${field.key}`} type="number" name={field.key} min={field.min} max={field.max} step={field.step} required value={values[field.key]} onChange={(event) => setValues((current) => ({ ...current, [field.key]: Number(event.target.value) }))} className="h-10 w-full rounded-[2px] border border-input bg-background px-3 pr-16 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
+              <input aria-label={field.label} data-testid={`input-predict-${model.id}-${field.key}`} type="number" name={field.key} min={bounds[field.key][0]} max={bounds[field.key][1]} step={['Dia', 'Edad', 'Hora', 'Dia_Semana'].includes(field.key) ? 1 : 'any'} required value={values[field.key]} onChange={(event) => setValues((current) => ({ ...current, [field.key]: event.target.value }))} className="h-10 w-full rounded-[2px] border border-input bg-background px-3 pr-16 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
                 {field.unit && <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{field.unit}</span>}
               </div>
               {field.help && <span className="mt-1 block text-[10px] leading-relaxed text-muted-foreground">{field.help}</span>}
@@ -147,7 +169,7 @@ function PredictionForm({ model, spec, onPredict, pending, result, error }: {
             {pending ? 'Calculando…' : 'Calcular estimación'}
             {!pending && <ArrowRight className="ml-2 h-3.5 w-3.5" />}
           </Button>
-          <span className="text-[10px] text-muted-foreground">Estimación educativa; no sustituye evaluación profesional.</span>
+          <span className="text-[10px] text-muted-foreground">Límites según los datos retenidos{model.feature_ranges ? '' : ' (referencia heredada)'} · estimación educativa; no sustituye evaluación profesional.</span>
         </div>
       </form>
       {error && <p role="alert" className="mt-4 flex items-center gap-2 rounded-sm border border-red-500/25 bg-red-500/5 px-3 py-2 text-xs text-red-700 dark:text-red-300"><AlertCircle size={14} />{error}</p>}
@@ -178,9 +200,10 @@ function CaseSection({ model, isDark, onPredict, pending, prediction, prediction
               <p className="mt-1.5 text-[13px] text-muted-foreground">{spec.deck}</p>
             </div>
           </div>
-          <span className="mono rounded-sm bg-muted px-2.5 py-1.5 text-[10px] text-muted-foreground">{num(model.row_count, 0)} filas · {num(model.test_row_count, 0)} prueba</span>
+          <span className="mono rounded-sm bg-muted px-2.5 py-1.5 text-[10px] text-muted-foreground">{num(model.row_count, 0)} retenidas · {num(model.test_row_count, 0)} prueba</span>
         </div>
         <p className="ml-0 mt-4 text-[11px] text-muted-foreground sm:ml-[76px]">{spec.source}</p>
+        <DataQualitySummary model={model} />
       </CardHeader>
       <CardContent className="px-5 pb-6 sm:px-7 sm:pb-7">
         <div className="grid grid-cols-3 border-y report-rule py-4">
@@ -367,6 +390,7 @@ function Home() {
           <div className="flex flex-wrap items-center justify-between gap-2"><span className="eyebrow text-[8px]">Notas de lectura</span><span>CRISP-DM · comprensión, modelado, evaluación y uso</span></div>
           <p className="mt-2 max-w-3xl">MSE y RMSE describen error en la unidad del objetivo al cuadrado y en la unidad original; R² expresa la proporción de variabilidad explicada en prueba. La importancia relativa se estandariza para comparar variables de distinta escala; no implica causalidad.</p>
           {query.data?.methodology.periodic_encoding && <p className="mt-1">Codificación periódica: {query.data.methodology.periodic_encoding}</p>}
+          {query.data?.methodology.cleaning_method && <p className="mt-1">Preparación y limpieza: {query.data.methodology.cleaning_method}</p>}
         </footer>}
         <div className="print-hidden mt-5 flex items-center justify-between border-t report-rule py-4 text-[9px] text-muted-foreground"><span>Material académico · Minería de datos</span><span className="mono">CO / LAB 01</span></div>
       </div>

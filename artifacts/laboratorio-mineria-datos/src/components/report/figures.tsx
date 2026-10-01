@@ -40,7 +40,7 @@ function ScatterPanel({ model, viz, letter }: { model: LabModelAnalysis; viz: La
     <div className="min-w-0" data-testid={`figure-scatter-${model.id}-${viz.feature}`}>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-labelledby={`${id}-t ${id}-d`} className="h-auto w-full">
         <title id={`${id}-t`}>Dispersión de {viz.label} frente a {model.target}</title>
-        <desc id={`${id}-d`}>Muestra de {n} puntos de {model.row_count} registros. Valores de {viz.label} entre {fmtTick(minX)} y {fmtTick(maxX)}; {model.target} entre {fmtTick(minY)} y {fmtTick(maxY)} {model.unit}. La recta es una tendencia univariada descriptiva.</desc>
+        <desc id={`${id}-d`}>Muestra de {n} puntos de {model.data_quality?.output_rows ?? model.row_count} filas retenidas tras la limpieza, de {model.data_quality?.input_rows ?? model.row_count} filas del CSV. Valores de {viz.label} entre {fmtTick(minX)} y {fmtTick(maxX)}; {model.target} entre {fmtTick(minY)} y {fmtTick(maxY)} {model.unit}. La recta es una tendencia univariada descriptiva.</desc>
         <defs><clipPath id={`${id}-clip`}><rect x={L} y={T} width={W - L - R} height={H - B - T} /></clipPath></defs>
         {ticks.map((t) => <g key={t}>
           <line x1={L} x2={W - R} y1={sy(minY + t * spanY)} y2={sy(minY + t * spanY)} stroke="hsl(var(--border))" strokeWidth="0.7" />
@@ -62,9 +62,11 @@ function ScatterPanel({ model, viz, letter }: { model: LabModelAnalysis; viz: La
 export function ScatterFigure({ model, number }: { model: LabModelAnalysis; number: number }) {
   const vizs = model.visualizations ?? [];
   const shown = vizs.length ? Math.max(...vizs.map((v) => v.points.length)) : 0;
+  const retainedRows = model.data_quality?.output_rows ?? model.row_count;
+  const inputRows = model.data_quality?.input_rows ?? model.row_count;
   return (
     <Figure number={number} testId={`figure-scatter-set-${model.id}`} title={`Cada predictor frente a ${model.target}`}
-      caption={`Dispersión de ${vizs.length} predictores. Se muestran ${shown} puntos por predictor de ${model.row_count} registros totales: ${shown === model.row_count ? 'el conjunto completo' : `una muestra determinista (semilla ${SAMPLE_SEED}, máximo ${SAMPLE_CAP} puntos), no el conjunto completo`}. La recta discontinua es una tendencia lineal univariada y descriptiva calculada solo sobre los puntos mostrados; no es la predicción del modelo múltiple ni incluye incertidumbre.`}>
+      caption={`Dispersión de ${vizs.length} predictores. Se muestran hasta ${shown} puntos de las ${retainedRows} filas retenidas para el modelo (CSV original: ${inputRows} filas): ${shown >= retainedRows ? 'el conjunto limpio completo' : `muestra determinista con semilla ${SAMPLE_SEED}, máximo ${SAMPLE_CAP} puntos`}. La recta discontinua es una tendencia lineal univariada y descriptiva calculada solo sobre los puntos mostrados; no es la predicción del modelo múltiple ni incluye incertidumbre.`}>
       {vizs.length === 0 ? <div className="border border-dashed report-rule p-4 text-center text-[10px] text-muted-foreground">El servicio no entregó puntos de dispersión para este modelo.</div> :
         <div className="report-scatter-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{vizs.map((v, i) => <ScatterPanel key={v.feature} model={model} viz={v} letter={String.fromCharCode(97 + i)} />)}</div>}
     </Figure>
@@ -98,7 +100,7 @@ export function CorrelationFigure({ model, number }: { model: LabModelAnalysis; 
    const valid = m && m.labels.length > 0 && m.features.length === m.labels.length && m.values.length === m.labels.length && m.values.every((row) => row.length === m.labels.length);
   return (
     <Figure number={number} testId={`figure-correlation-${model.id}`} title={`Matriz de correlación de Pearson: ${model.name}`}
-      caption={`Correlación de Pearson calculada con todos los registros del CSV${m ? ` (${m.row_count})` : ''}, sobre las variables originales. Escala de -1 (inversa) a 1 (directa). Advertencia: Pearson sobre códigos crudos de hora o día de semana no puede representar asociaciones cíclicas, por lo que puede subestimarlas.`}>
+      caption={`Correlación de Pearson calculada sobre las ${m?.row_count ?? model.data_quality?.output_rows ?? model.row_count} filas retenidas tras la limpieza, de ${model.data_quality?.input_rows ?? model.row_count} filas del CSV original, a partir de los valores originales. Escala de -1 (inversa) a 1 (directa). Advertencia: Pearson sobre códigos crudos de hora o día de semana no puede representar asociaciones cíclicas, por lo que puede subestimarlas.`}>
       {!valid ? <div className="border border-dashed report-rule p-4 text-center text-[10px] text-muted-foreground" data-testid={`status-correlation-empty-${model.id}`}>La matriz de correlación no está disponible en la respuesta actual del servicio.</div> : <>
         <div className="overflow-x-auto">
           <table className="corr-table w-full border-collapse text-[9px]">
