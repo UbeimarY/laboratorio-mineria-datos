@@ -1,0 +1,28 @@
+kind = "data-app"
+previewPath = "/"
+title = "Laboratorio de Minería de Datos"
+description = "Aplicación académica en español que aplica CRISP-DM a regresiones lineales de dólar, glucosa y consumo energético, con visualizaciones, evaluación del modelo, predicciones y entrega reproducible en Python."
+version = "1.0.0"
+id = "artifacts/laboratorio-mineria-datos"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19170
+
+[services.development]
+run = "pnpm --filter @workspace/laboratorio-mineria-datos run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/laboratorio-mineria-datos", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/laboratorio-mineria-datos/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19170"
+BASE_PATH = "/"

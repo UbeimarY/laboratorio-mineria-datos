@@ -1,0 +1,206 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: laboratorio
+    description: Análisis y predicciones para el laboratorio de minería de datos
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /lab/analysis:
+    get:
+      operationId: getLabAnalysis
+      tags: [laboratorio]
+      summary: Obtiene resultados, coeficientes y datos de visualización de los tres modelos
+      responses:
+        "200":
+          description: Resultados de análisis para dólar, glucosa y energía
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabAnalysisResponse"
+  /lab/predict:
+    post:
+      operationId: predictLabValue
+      tags: [laboratorio]
+      summary: Calcula una predicción con uno de los modelos entrenados
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabPredictionRequest"
+      responses:
+        "200":
+          description: Predicción calculada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabPredictionResponse"
+        "400":
+          description: Identificador o variables inválidas
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    LabAnalysisResponse:
+      type: object
+      properties:
+        models:
+          type: array
+          items:
+            $ref: "#/components/schemas/LabModelAnalysis"
+        methodology:
+          type: object
+          properties:
+            train_test_split:
+              type: string
+            random_state:
+              type: integer
+            periodic_encoding:
+              type: string
+            importance_method:
+              type: string
+          required: [train_test_split, random_state, periodic_encoding, importance_method]
+      required: [models, methodology]
+    LabModelAnalysis:
+      type: object
+      properties:
+        id:
+          type: string
+          enum: [dolar, glucosa, energia]
+        name:
+          type: string
+        target:
+          type: string
+        unit:
+          type: string
+        row_count:
+          type: integer
+        test_row_count:
+          type: integer
+        metrics:
+          type: object
+          properties:
+            mse:
+              type: number
+            rmse:
+              type: number
+            r2:
+              type: number
+          required: [mse, rmse, r2]
+        intercept:
+          type: number
+        feature_impacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/LabFeatureImpact"
+        visualizations:
+          type: array
+          items:
+            $ref: "#/components/schemas/LabVisualization"
+        data_preview:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: number
+        conclusion:
+          type: string
+      required:
+        - id
+        - name
+        - target
+        - unit
+        - row_count
+        - test_row_count
+        - metrics
+        - intercept
+        - feature_impacts
+        - visualizations
+        - data_preview
+        - conclusion
+    LabFeatureImpact:
+      type: object
+      properties:
+        feature:
+          type: string
+        label:
+          type: string
+        coefficient:
+          type: number
+        standardized_impact:
+          type: number
+        importance_pct:
+          type: number
+        direction:
+          type: string
+        interpretation:
+          type: string
+      required: [feature, label, coefficient, standardized_impact, importance_pct, direction, interpretation]
+    LabVisualization:
+      type: object
+      properties:
+        feature:
+          type: string
+        label:
+          type: string
+        points:
+          type: array
+          items:
+            type: object
+            properties:
+              x:
+                type: number
+              y:
+                type: number
+            required: [x, y]
+      required: [feature, label, points]
+    LabPredictionRequest:
+      type: object
+      properties:
+        model_id:
+          type: string
+          enum: [dolar, glucosa, energia]
+        features:
+          type: object
+          additionalProperties:
+            type: number
+      required: [model_id, features]
+    LabPredictionResponse:
+      type: object
+      properties:
+        model_id:
+          type: string
+        prediction:
+          type: number
+        target:
+          type: string
+        unit:
+          type: string
+      required: [model_id, prediction, target, unit]
+
